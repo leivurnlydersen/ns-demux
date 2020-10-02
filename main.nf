@@ -3,7 +3,6 @@
 params.rundir = null
 params.outdir = null
 params.samplesheet = null
-params.whitelist = null
 params.help = false
 
 helpMessage = """
@@ -21,12 +20,10 @@ if (params.help) {
 assert params.rundir != null, 'Input parameter "rundir" cannot be unassigned.'
 assert params.outdir != null, 'Input parameter "outdir" cannot be unassigned.'
 assert params.samplesheet != null, 'Input parameter "samplesheet" cannot be unassigned.'
-assert params.whitelist != null, 'Input parameter "whitelist" cannot be unassigned.'
 
 rundir = file(params.rundir)
 outdir = file(params.outdir)
 samplesheet = file(params.samplesheet)
-whitelist = file(params.whitelist)
 
 println "N E X T S E Q     D E M U X                    "
 println "================================="
@@ -156,7 +153,7 @@ process trim_adapters {
     set key, file(read1), file(read2), file(adapter_fasta) from trim_adapters_data_ch
 
     output:
-    set key, file("*R1*adapter_trimmed.fastq.gz"), file("*R2*adapter_trimmed.fastq.gz") into fastq_bctrim_ch
+    set key, file("*R1*adapter_trimmed.fastq.gz"), file("*R2*adapter_trimmed.fastq.gz") into fastq_adaptrim_polyg_ch, fastq_check_sync_ch
     file 'bbduk.log'
 
     when:
@@ -170,33 +167,6 @@ process trim_adapters {
     # k-mer size 21, and 11 at the end of the read (mink=11).
     # Use pair overlap detection (tbo), and trim both reads to the same length (tpe).
     bbduk.sh -Xmx${task.memory.toGiga()}g in1=$read1 in2=$read2 out1=$sample\\_$lane\\_R1\\_adapter_trimmed.fastq.gz out2=$sample\\_$lane\\_R2\\_adapter_trimmed.fastq.gz ref=$adapter_fasta ktrim=r k=21 mink=11 hdist=2 tbo tpe 2> bbduk.log
-    """
-}
-
-// Trim 10x barcode from read 2.
-// The barcode is taken from the first 16 bases of read 1.
-// If the barcode does not match any in the list of known barcodes (whitelist), we do not trim.
-// FIXME: trimR2bc.py reads FASTQ records in chunks. If these chunks are large, this process may require a non-trivial amount of memory.
-process bctrim {
-    label 'small_mem'
-
-    publishDir "$outdir/$sample/logs/bctrim", mode: 'copy', pattern: 'bctrim_stats.log', saveAs: { filename -> "${lane}.log" }
-
-    input:
-    set key, file(read1), file(read2) from fastq_bctrim_ch
-
-    output:
-    set key, file("*R1*bctrimmed.fastq.gz"), file("*R2*bctrimmed.fastq.gz") into fastq_polyg_trim_ch, fastq_check_bctrim_sync_ch
-    file 'bctrim_stats.log'
-
-    script:
-    sample = key[0]
-    lane = key[1]
-    """
-    trimR2bc.py $read1 $read2 $whitelist $sample\\_$lane\\_R2\\_bctrimmed.fastq 1> bctrim_stats.log
-    gzip -k $sample\\_$lane\\_R2\\_bctrimmed.fastq
-    # Even though we did not change R1, we rename it before outputting it, as having differently named R1 and R2 can cause confusion.
-    cp $read1 $sample\\_$lane\\_R1\\_bctrimmed.fastq.gz
     """
 }
 
@@ -227,11 +197,11 @@ process bctrim {
 
 // Check that the read 1 and 2 are synchronized. If they are not, this process will throw an error
 // and the pipeline will exit.
-process check_bctrim_sync {
+process check_bbduk_sync {
     label 'small_mem'
 
     input:
-    set key, file(read1), file(read2) from fastq_check_bctrim_sync_ch
+    set key, file(read1), file(read2) from fastq_check_sync_ch
 
     script:
     """
@@ -244,13 +214,15 @@ process check_bctrim_sync {
 // FIXME: how much memory does fastp actually need?
 process polyG_trim {
     publishDir "$outdir/$sample/logs/polyG_trim", mode: 'copy', pattern: 'polyG_trim.log', saveAs: { filename -> "${lane}.log" }
+    publishDir "$outdir/$sample/fastp", mode: 'copy', pattern: '*.json'
 
     input:
-    set key, file(read1), file(read2) from fastq_polyg_trim_ch
+    set key, file(read1), file(read2) from fastq_adaptrim_polyg_ch
 
     output:
     set key, file("*R1*polyGtrimmed.fastq.gz"), file("*R2*polyGtrimmed.fastq.gz") into fastq_qtrim_r1_ch, fastq_qtrim_r2_ch
     file 'polyG_trim.log'
+    file 'polyG_trim_log_fastp.json'
 
     script:
     sample = key[0]
@@ -258,7 +230,7 @@ process polyG_trim {
     """
     # Trim poly G of reads
     # Q: Disable quality filter, -L: Disable length filter, -A: Disable adapter filtering, -g: Enable polyG trim
-    fastp -i $read1 -I $read2 -o $sample\\_$lane\\_R1\\_polyGtrimmed.fastq.gz -O $sample\\_$lane\\_R2\\_polyGtrimmed.fastq.gz -Q -L -A -g -h "polyG_trim_log.html" -j "polyG_trim_log.json" 2> polyG_trim.log
+    fastp -i $read1 -I $read2 -o $sample\\_$lane\\_R1\\_polyGtrimmed.fastq.gz -O $sample\\_$lane\\_R2\\_polyGtrimmed.fastq.gz -Q -L -A -g -h "polyG_trim_log.html" -j "polyG_trim_log_fastp.json" 2> polyG_trim.log
     # NOTE: is does not seem like HTML and JSON reports (-h and -j) can be disabled.
     """
 }
