@@ -28,7 +28,7 @@ outdir = file(params.outdir)
 samplesheet = file(params.samplesheet)
 whitelist = file(params.whitelist)
 
-println "D E M U X    L I N K S E Q   "
+println "N E X T S E Q     D E M U X                    "
 println "================================="
 println "rundir              : ${rundir}"
 println "outdir              : ${outdir}"
@@ -375,7 +375,7 @@ process multiqc {
 }
 
 workflow.onComplete {
-    log.info "D E M U X    L I N K S E Q   "
+    log.info "N E X T S E Q     D E M U X                    "
     log.info "================================="
     log.info "rundir              : ${rundir}"
     log.info "outdir              : ${outdir}"

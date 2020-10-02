@@ -1,5 +1,5 @@
 
-name: linkseq-demux
+name: ns-demux
 
 channels:
   - bioconda
@@ -14,4 +14,4 @@ dependencies:
   - bbtools=37.62
   - fastp=0.20.0
   - sickle-trim=1.33
-  - multiqc=1.8
+  - multiqc=1.9
