@@ -46,8 +46,6 @@ println "================================="
 
 
 // Call bcl2fastq, performing simultaneous basecalling and demultiplexing.
-// --use-bases-mask will use RunInfo.xml (in the run directory) to determine the length of read 1 and 2
-// and of the index.
 // Adapter sequences (read 1 and read2) should be contained in the sample sheet.
 process bcl2fastq {
     publishDir "$outdir", mode: 'copy', pattern: '.command.log', saveAs: {filename -> 'bcl2fastq/log.log'}
@@ -82,7 +80,6 @@ process bcl2fastq {
         -o outs \
         --interop-dir interop \
         --sample-sheet $samplesheet \
-        --use-bases-mask Y*,I*,Y* \
         --minimum-trimmed-read-length 8 \
         --mask-short-adapter-reads 8 \
         --ignore-missing-positions \
