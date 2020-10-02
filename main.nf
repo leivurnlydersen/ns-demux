@@ -302,8 +302,12 @@ process sync_qtrim_reads {
 
 // Run FastQC for QC metrics of raw data.
 // NOTE: FastQC claims 250 MB of memory for every thread that is allocated to it.
+// TODO: Put all QC logs/reports in a "QC" folder under the sample folder. Then, only let
+// MultiQC look in those specific folders.
 process fastqc_analysis {
     memory { 250.MB * task.cpus }
+
+    // FIXME: I'm pretty sure the fastqc.log gets overwritten multiple times, because this process is per sample per lane.
 
     publishDir "$outdir/$sample/fastqc", mode: 'copy', pattern: '{*.zip,*.html}',
         saveAs: {filename -> filename.indexOf('.zip') > 0 ? "zips/$filename" : "$filename"}
