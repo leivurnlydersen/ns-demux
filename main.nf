@@ -20,16 +20,19 @@ if (params.help) {
 assert params.rundir != null, 'Input parameter "rundir" cannot be unassigned.'
 assert params.outdir != null, 'Input parameter "outdir" cannot be unassigned.'
 assert params.samplesheet != null, 'Input parameter "samplesheet" cannot be unassigned.'
+assert params.bases_mask != null, 'Input parameter "bases_mask" cannot be unassigned.'
 
 rundir = file(params.rundir)
 outdir = file(params.outdir)
 samplesheet = file(params.samplesheet)
+bases_mask = params.bases_mask
 
 println "N E X T S E Q     D E M U X                    "
 println "================================="
 println "rundir              : ${rundir}"
 println "outdir              : ${outdir}"
 println "samplesheet         : ${samplesheet}"
+println "bases_mask          : ${bases_mask}"
 println "================================="
 println "Command line        : ${workflow.commandLine}"
 println "Profile             : ${workflow.profile}"
@@ -80,6 +83,7 @@ process bcl2fastq {
         -o outs \
         --interop-dir interop \
         --sample-sheet $samplesheet \
+        --use-bases-mask $bases_mask \
         --minimum-trimmed-read-length 8 \
         --mask-short-adapter-reads 8 \
         --ignore-missing-positions \
