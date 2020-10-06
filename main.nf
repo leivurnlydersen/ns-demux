@@ -52,7 +52,8 @@ println "================================="
 // Adapter sequences (read 1 and read2) should be contained in the sample sheet.
 process bcl2fastq {
     publishDir "$outdir", mode: 'copy', pattern: '.command.log', saveAs: {filename -> 'bcl2fastq/log.log'}
-    publishDir "$outdir", mode: 'copy', pattern: 'outs/Stats/Stats.json', saveAs: {filename -> 'bcl2fastq/Stats.json'}
+    publishDir "$outdir/multiqc_logs/bcl2fastq", mode: 'copy', pattern: 'outs/Stats/Stats.json',
+        saveAs: {filename -> 'Stats.json'}
 
     output:
     file "outs/*fastq.gz" into fastq_trim_adapters_ch
@@ -215,7 +216,7 @@ process check_bbduk_sync {
 // FIXME: how much memory does fastp actually need?
 process polyG_trim {
     publishDir "$outdir/$sample/logs/polyG_trim", mode: 'copy', pattern: 'polyG_trim.log', saveAs: { filename -> "${lane}.log" }
-    publishDir "$outdir/$sample/fastp", mode: 'copy', pattern: '*.json',
+    publishDir "$outdir/multiqc_logs/fastp/$sample", mode: 'copy', pattern: '*.json',
         saveAs: { filename -> "${sample}_${lane}_fastp.json" }
 
     input:
@@ -311,7 +312,7 @@ process fastqc_analysis {
 
     // FIXME: I'm pretty sure the fastqc.log gets overwritten multiple times, because this process is per sample per lane.
 
-    publishDir "$outdir/$sample/fastqc", mode: 'copy', pattern: '{*.zip,*.html}',
+    publishDir "$outdir/multiqc_logs/fastqc/$sample", mode: 'copy', pattern: '{*.zip,*.html}',
         saveAs: {filename -> filename.indexOf('.zip') > 0 ? "zips/$filename" : "$filename"}
     publishDir "$outdir/$sample/fastqc", mode: 'copy', pattern: '.command.log',
         saveAs: {filename -> 'fastqc.log'}
@@ -348,7 +349,7 @@ process multiqc {
 
     script:
     """
-    multiqc -f $outdir
+    multiqc -f $outdir/multiqc_logs
     """
 }
 
