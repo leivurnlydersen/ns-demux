@@ -216,8 +216,6 @@ process check_bbduk_sync {
 // FIXME: how much memory does fastp actually need?
 process polyG_trim {
     publishDir "$outdir/$sample/logs/polyG_trim", mode: 'copy', pattern: 'polyG_trim.log', saveAs: { filename -> "${lane}.log" }
-    publishDir "$outdir/multiqc_logs/fastp/$sample", mode: 'copy', pattern: '*.json',
-        saveAs: { filename -> "${sample}_${lane}_fastp.json" }
 
     input:
     set key, file(read1), file(read2) from fastq_adaptrim_polyg_ch
@@ -225,7 +223,6 @@ process polyG_trim {
     output:
     set key, file("*R1*polyGtrimmed.fastq.gz"), file("*R2*polyGtrimmed.fastq.gz") into fastq_qtrim_r1_ch, fastq_qtrim_r2_ch
     file 'polyG_trim.log'
-    file 'polyG_trim_log_fastp.json'
 
     script:
     sample = key[0]
