@@ -29,7 +29,7 @@ for line in infile:
 infile.close()
 
 assert adapter1 != -1, "Adapter not found in samplesheet: %s" %(filename)
-assert adapter2 != -1, "AdapterRead2 not found in samplesheet: %s" %(filename)
+# assert adapter2 != -1, "AdapterRead2 not found in samplesheet: %s" %(filename)
 
 adapter_fasta_str = ">Adapter1" "\n" + adapter1 + "\n" + ">Adapter2" + "\n" + adapter2
 
